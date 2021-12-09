@@ -22,9 +22,11 @@ Options:
   end-date                  Is of form "year-month-day hr:min:sec"
   year                      The year you want to aggregate results from
   file_path                 An absolute path to the csv file from John Hopkins you wish to read into postgres
+  sign_in                   This takes a username and a password and if the user exists assigns a local environment variable that is the connection string. This way the cli will use that specific connection string for a user.
 """
 
 from os import stat
+from os import environ
 from os.path import exists
 import pandas as pd
 from sqlalchemy import create_engine
@@ -64,20 +66,16 @@ class Sona460:
 
 def create_connection(username='postgres', password='mysecretpassword'):
     connection_string = 'postgresql://{0}:{1}@localhost:5432/sona460'.format(username, password)
+    environ['SONA460_CONN_STR'] = connection_string
+    return connection_string
 
 def sign_up(conn,username, password):
     statement = """CREATE USER {0} WITH PASSWORD \'{1}\'""".format(username, password)
     conn.execute(statement)
-    statement = """GRANT ALL ON coviddays TO {0}"""
+    statement = """GRANT ALL ON coviddays TO {0}""".format(username)
     conn.execute(statement)
+    print('Created user {0}'.format(username))
     
-
-def insert_file_from_csv(conn, file_name):
-    df = pd.read_csv('/Users/jacobgoldverg/covidata/csse_covid_19_daily_reports_us/' + file_name)
-    name = file_name.split(".")[0]
-    df.head(0).to_sql(name, engine, if_exists='replace')
-    cur = conn.cursor()
-
 def load_from_csv(conn, engine, path='/Users/jacobgoldverg/covidata/csse_covid_19_daily_reports_us/05-21-2021.csv'):
     #load csv into pandas data frame
     df = pd.read_csv(path)
@@ -143,20 +141,21 @@ def get_date(conn, year=0, month=0, day=0):
 
 #gather the statistics about a table 
 def print_stats(conn, state, column_name):
-    statement = """select * from coviddays where coviddays.province_state=\'{0}\';""".format(state)
+    statement = """select {1} from coviddays where coviddays.province_state=\'{0}\';""".format(state, column_name)
     result = conn.execute(statement)
-    print_query_result(result)
+    print_query_result(result, column_name)
 
 def check_if_user_exists(conn, username):
     statement = """SELECT 1 FROM pg_roles WHERE rolname=\'{0}\'""".format(username)
     result = conn.execute(statement)
-    print_query_result(result)
-    if result[0]>0:
+    re = result.first()[0]
+    if re > 0:
+        print('Login Worked')
         return True
     else:
-        return False;
-    
-
+        print('Login Failed')
+        return False    
+        
 def print_covid_table_stats(conn, inspector, table_name='coviddays'):
     print("Columns:")
     pprint.pprint(inspector.get_columns(table_name))
@@ -166,11 +165,19 @@ def print_covid_table_stats(conn, inspector, table_name='coviddays'):
     for row in result:
         pprint.pprint(row)
 
-def print_query_result(result):
+def print_query_result(result, column_name=''):
+    size = 0
+    print(column_name)
     for row in result:
+        size+=1
         print(row)
+    if size == 0:
+        print("Empty Result")
 
 def build_db_conn(connection_str):
+    conn_str = connection_str
+    if len(conn_str) <= 2:
+        conn_str = connection_str
     engine = create_engine(connection_str)
     conn = engine.connect()    
     inspector = inspect(engine)
