@@ -1,5 +1,13 @@
 This file was written by Jacob Goldverg with UB number 50218299, for CSE 460 project under team Sona.
 
+This project requires a few things to run:
+    1. Please make sure you have pip installed and I ran this project using Python3.9.
+    2. Run PostgresSQL locally on localhost:5432
+    3. pip3 install pprintpp
+    4. pip3 install docopt
+    5. pip3 install psutil
+    6. pip3 install pandas
+
 1. The DataSource used for the project
 
     The data was provided by John Hopkins University. The school manages this Github repository containing data revolving cases of COVID-19.
@@ -35,20 +43,20 @@ Options:
   file_path                 An absolute path to the csv file from John Hopkins you wish to read into postgres
 
   Steps to run:
-  1) First please make sure you have postgresql running on localhost:5432 or please go into the code and in the main method swap the host and port appropriately
+  1. First please make sure you have postgresql running on localhost:5432 or please go into the code and in the main method swap the host and port appropriately
   For this project I used this docker command:
                 docker run --name sona460-postgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres -p 5432:5432
-  2) Download the csv files from and please make sure you know the absolute path. I am not sure how to run on Windows btw only for Linux as far as I can tell:
+  2. Download the csv files from and please make sure you know the absolute path. I am not sure how to run on Windows btw only for Linux as far as I can tell:
                  https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_daily_reports_us
-  3) Now that postgres is running lets first load in a file. Replace the path for the files from step 2.
+  3. Now that postgres is running lets first load in a file. Replace the path for the files from step 2.
                 python3 importer.py load_csv /Users/jacobgoldverg/covidata/csse_covid_19_daily_reports_us/02-09-2021.csv
-  4) Lets look at what kind of table we have(I will cover the sign in process below):
+  4. Lets look at what kind of table we have(I will cover the sign in process below):
                 python3 importer.py print_table_stats
-  5) Using the date of the file you loaded into the database. Feel free to load in anymore files.
+  5. Using the date of the file you loaded into the database. Feel free to load in anymore files.
                 python3 importer.py get_date --year 2021 --month 2 --day 10 
-  6) Lets say you would like to view the  
+  6. Lets say you would like to view the  
    Login Example:
-    1)Once postgres is running with the proper host and port in the cli. Try this to create a user in the DB.
+    1. Once postgres is running with the proper host and port in the cli. Try this to create a user in the DB.
             python3 importer.py sign_up --username jacob --password hello
-    2)The user you just made already has the proper permissions so there is nothing extra to do.
+    2. The user you just made already has the proper permissions so there is nothing extra to do.
             python3 importer.py sign_in --username jacob --password hello 
